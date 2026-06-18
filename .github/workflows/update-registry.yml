@@ -1,0 +1,34 @@
+name: Update Registry Manifest
+
+on:
+  repository_dispatch:
+    types: [update-manifest]
+
+jobs:
+  update_registry:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Orchestrator
+        uses: actions/checkout@v4
+
+      - name: Checkout Registry
+        uses: actions/checkout@v4
+        with:
+          repository: <YOUR_ORG>/ToolboxRegistry
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: registry
+
+      - name: Copy manifest from plugin branch
+        run: |
+          echo "Copying manifest from branch: ${{ github.event.client_payload.branch }}"
+          cp manifests/*.json registry/manifests/
+
+      - name: Commit and push manifest to Registry
+        run: |
+          cd registry
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add manifests/
+          git commit -m "Update manifest from Orchestrator" || echo "No changes"
+          git push
