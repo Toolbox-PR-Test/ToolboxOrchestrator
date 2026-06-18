@@ -9,16 +9,17 @@ permissions:
 
 jobs:
   label:
+    if: |
+      github.event.pull_request.merged == false &&
+      !contains(github.event.pull_request.labels.*.name, 'successfully-deployed') &&
+      !contains(github.event.pull_request.labels.*.name, 'failed-to-deploy')
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
-      - name: Label as approved or rejected
+      - name: Label as rejected
         run: |
-          pr="${{ github.event.pull_request.number }}"
-          repo="${{ github.repository }}"
-          if [ "${{ github.event.pull_request.merged }}" = "true" ]; then
-            gh pr edit "$pr" --repo "$repo" --remove-label "waiting-for-approval" --add-label "approved"
-          else
-            gh pr edit "$pr" --repo "$repo" --remove-label "waiting-for-approval" --add-label "rejected"
-          fi
+          gh pr edit ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --remove-label "waiting-for-approval" \
+            --add-label "rejected"
