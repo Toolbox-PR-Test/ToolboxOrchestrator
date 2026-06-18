@@ -1,0 +1,39 @@
+name: Build index
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "manifests/**"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rebuild index.json
+        run: |
+          files=(manifests/*.json)
+          if [ ${#files[@]} -eq 0 ] || [ ! -f "${files[0]}" ]; then
+            echo "[]" > index.json
+          else
+            jq -s 'map(select(.enabled != false)) | sort_by(.name)' "${files[@]}" > index.json
+          fi
+          echo "index.json contains $(jq length index.json) app(s)"
+          cat index.json
+
+      - name: Commit index.json
+        run: |
+          git config user.name "toolbox-bot"
+          git config user.email "toolbox-bot@users.noreply.github.com"
+          git add index.json
+          if git diff --cached --quiet; then
+            echo "No changes."
+          else
+            git commit -m "rebuild: index.json"
+            git push
+          fi
