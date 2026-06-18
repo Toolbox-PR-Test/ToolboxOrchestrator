@@ -1,11 +1,1 @@
-[
-  {
-    "name": "FacCon",
-    "slug": "faccon",
-    "description": "Facade configuration tool.",
-    "path": "/apps/faccon",
-    "tech": "html",
-    "enabled": true,
-    "version": "v.1.0.5"
-  }
-]
+[]
