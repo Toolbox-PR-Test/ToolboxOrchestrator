@@ -17,11 +17,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Get manifest info
-        id: meta
+      - name: Add deploying label
         run: |
-          slug=$(jq -r .slug "manifests/$(ls manifests/ | head -1)" 2>/dev/null || echo "unknown")
-          echo "slug=$slug" >> "$GITHUB_OUTPUT"
+          gh pr edit ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --add-label "deploying-to-server"
 
       - name: Deploy (placeholder)
         run: |
@@ -36,10 +36,21 @@ jobs:
             --merge \
             --delete-branch
 
-      - name: Remove approved label on failure
+      - name: On success - update labels
+        run: |
+          gh pr edit ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --remove-label "approved" \
+            --remove-label "deploying-to-server" \
+            --remove-label "waiting-for-approval" \
+            --add-label "successfully-deployed"
+
+      - name: On failure - update labels
         if: failure()
         run: |
           gh pr edit ${{ github.event.pull_request.number }} \
             --repo ${{ github.repository }} \
             --remove-label "approved" \
-            --add-label "deploy-failed"
+            --remove-label "deploying-to-server" \
+            --remove-label "waiting-for-approval" \
+            --add-label "failed-to-deploy"
