@@ -26,31 +26,43 @@ jobs:
       - name: Deploy (placeholder)
         run: |
           echo "Deploying ${{ github.event.pull_request.title }}..."
-          echo "In production this copies files to IIS / starts the service on its port."
           echo "Deploy success."
 
-      - name: Merge PR
+      - name: Success - merge and label
         run: |
           gh pr merge ${{ github.event.pull_request.number }} \
             --repo ${{ github.repository }} \
             --merge \
             --delete-branch
-
-      - name: On success - update labels
-        run: |
           gh pr edit ${{ github.event.pull_request.number }} \
             --repo ${{ github.repository }} \
+            --remove-label "waiting-for-approval" \
             --remove-label "approved" \
             --remove-label "deploying-to-server" \
-            --remove-label "waiting-for-approval" \
             --add-label "successfully-deployed"
 
-      - name: On failure - update labels
+      - name: Failure - close and label
         if: failure()
         run: |
+          gh pr close ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }}
           gh pr edit ${{ github.event.pull_request.number }} \
             --repo ${{ github.repository }} \
+            --remove-label "waiting-for-approval" \
             --remove-label "approved" \
             --remove-label "deploying-to-server" \
-            --remove-label "waiting-for-approval" \
             --add-label "failed-to-deploy"
+
+  reject:
+    if: github.event.label.name == 'rejected'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Close PR
+        run: |
+          gh pr close ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }}
+          gh pr edit ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --remove-label "waiting-for-approval"
