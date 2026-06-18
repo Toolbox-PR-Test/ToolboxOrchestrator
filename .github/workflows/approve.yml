@@ -1,0 +1,25 @@
+name: Approve Plugin Release
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+jobs:
+  wait_for_approval:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Wait for PR approval
+        uses: juliangruber/wait-for-approval@v1
+
+      - name: Trigger deploy workflow
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          event-type: deploy-plugin
+          client-payload: |
+            {
+              "pr_number": "${{ github.event.pull_request.number }}",
+              "branch": "${{ github.event.pull_request.head.ref }}"
+            }
