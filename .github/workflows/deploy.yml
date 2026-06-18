@@ -17,10 +17,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Add deploying label
+      - name: Remove waiting label and add deploying
         run: |
           gh pr edit ${{ github.event.pull_request.number }} \
             --repo ${{ github.repository }} \
+            --remove-label "waiting-for-approval" \
             --add-label "deploying-to-server"
 
       - name: Deploy (placeholder)
@@ -29,6 +30,8 @@ jobs:
           echo "Deploy success."
 
       - name: Success - merge and label
+        env:
+          GH_TOKEN: ${{ secrets.ORCHESTRATOR_TOKEN }}
         run: |
           gh pr merge ${{ github.event.pull_request.number }} \
             --repo ${{ github.repository }} \
@@ -36,7 +39,6 @@ jobs:
             --delete-branch
           gh pr edit ${{ github.event.pull_request.number }} \
             --repo ${{ github.repository }} \
-            --remove-label "waiting-for-approval" \
             --remove-label "approved" \
             --remove-label "deploying-to-server" \
             --add-label "successfully-deployed"
@@ -59,10 +61,10 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
-      - name: Close PR
+      - name: Close PR and remove waiting label
         run: |
-          gh pr close ${{ github.event.pull_request.number }} \
-            --repo ${{ github.repository }}
           gh pr edit ${{ github.event.pull_request.number }} \
             --repo ${{ github.repository }} \
             --remove-label "waiting-for-approval"
+          gh pr close ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }}
