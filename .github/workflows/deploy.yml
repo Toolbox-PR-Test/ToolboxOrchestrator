@@ -1,0 +1,45 @@
+name: Deploy on approval
+
+on:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  deploy:
+    if: github.event.label.name == 'approved'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get manifest info
+        id: meta
+        run: |
+          slug=$(jq -r .slug "manifests/$(ls manifests/ | head -1)" 2>/dev/null || echo "unknown")
+          echo "slug=$slug" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy (placeholder)
+        run: |
+          echo "Deploying ${{ github.event.pull_request.title }}..."
+          echo "In production this copies files to IIS / starts the service on its port."
+          echo "Deploy success."
+
+      - name: Merge PR
+        run: |
+          gh pr merge ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --merge \
+            --delete-branch
+
+      - name: Remove approved label on failure
+        if: failure()
+        run: |
+          gh pr edit ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --remove-label "approved" \
+            --add-label "deploy-failed"
